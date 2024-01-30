@@ -189,3 +189,404 @@ ggplot(CASchools, aes(x = STR, y = score)) +
        title = "Scatterplot of Test Score and STR")
 
 
+# 4.3 Measures of Fit ----------------------------------------------------------
+
+mod_summary <- summary(linear_model)
+mod_summary
+#> 
+#> Call:
+#> lm(formula = score ~ STR, data = CASchools)
+#> 
+#> Residuals:
+#>     Min      1Q  Median      3Q     Max 
+#> -47.727 -14.251   0.483  12.822  48.540 
+#> 
+#> Coefficients:
+#>             Estimate Std. Error t value Pr(>|t|)    
+#> (Intercept) 698.9329     9.4675  73.825  < 2e-16 ***
+#> STR          -2.2798     0.4798  -4.751 2.78e-06 ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#> 
+#> Residual standard error: 18.58 on 418 degrees of freedom
+#> Multiple R-squared:  0.05124,    Adjusted R-squared:  0.04897 
+#> F-statistic: 22.58 on 1 and 418 DF,  p-value: 2.783e-06
+
+
+# compute R^2 manually
+SSR <- sum(mod_summary$residuals^2)
+# TSS <- sum((score - mean(score))^2)
+TSS <- sum((CASchools$score - mean(CASchools$score))^2)
+R2 <- 1 - SSR/TSS
+
+# print the value to the console
+R2
+#> [1] 0.05124009
+
+# compute SER manually
+n <- nrow(CASchools)
+SER <- sqrt(SSR / (n-2))
+
+# print the value to the console
+SER
+#> [1] 18.58097
+
+
+# 4.4 The Least Squares Assumptions --------------------------------------------
+
+# set a seed to make the results reproducible
+set.seed(321)
+
+# simulate the data 
+X <- runif(50, min = -5, max = 5)
+u <- rnorm(50, sd = 1)  
+
+# the true relation  
+Y <- X^2 + 2 * X + u                
+
+# estimate a simple regression model 
+mod_simple <- lm(Y ~ X)
+
+# estimate a quadratic regression model
+mod_quadratic <- lm( Y ~ X + I(X^2)) 
+
+# predict using a quadratic model 
+prediction <- predict(mod_quadratic, data.frame(X = sort(X)))
+
+# plot the results
+# plot( Y ~ X, col = "black", pch = 20, xlab = "X", ylab = "Y")
+# abline( mod_simple, col = "blue",lwd=2)
+#red line = incorrect linear regression (this violates the first OLS assumption)
+# lines( sort(X), prediction,col="red",lwd=2)
+# legend("topleft", 
+#        legend = c("Simple Regression Model", 
+#                   "Quadratic Model"),
+#        cex = 1,
+#        lty = 1,
+#        col = c("blue","red"))
+ggplot() +
+  geom_point(aes(x = X, y = Y)) +
+  geom_abline(aes(intercept = mod_simple$coefficients[1], 
+                  slope = mod_simple$coefficients[2], 
+                  color = "Simple Regression Model")) +
+  geom_line(aes(x = sort(X), y = prediction, color = "Quadratic Model")) +
+  scale_color_manual(name = NULL, 
+                     values = c("Simple Regression Model" = "blue", 
+                                "Quadratic Model" = "red")) +
+  labs(x = "X", y = "Y") +
+  theme(legend.position = c(0, 1), legend.justification = c(0, 1))
+
+
+# set seed
+set.seed(123)
+
+# generate a date vector
+Date <- seq(as.Date("1951/1/1"), as.Date("2000/1/1"), "years")
+
+# initialize the employment vector
+X <- c(5000, rep(NA, length(Date)-1))
+
+# generate time series observations with random influences
+for (t in 2:length(Date)) {
+    
+    X[t] <- -50 + 0.98 * X[t-1] + rnorm(n = 1, sd = 200)
+    
+}
+
+#plot the results
+# plot(x = Date, 
+#      y = X, 
+#      type = "l", 
+#      col = "steelblue", 
+#      ylab = "Workers", 
+#      xlab = "Time",
+#      lwd=2)
+ggplot() +
+  geom_line(aes(x = Date, y = X), color = "steelblue") +
+  labs(x = "Time", y = "Workers")
+
+
+# set seed
+set.seed(123)
+
+# generate the data
+X <- sort(runif(10, min = 30, max = 70))
+Y <- rnorm(10 , mean = 200, sd = 50)
+Y[9] <- 2000
+
+# fit model with outlier
+fit <- lm(Y ~ X)
+
+# fit model without outlier
+fitWithoutOutlier <- lm(Y[-9] ~ X[-9])
+
+# plot the results
+# plot(Y ~ X,pch=20)
+# abline(fit,lwd=2,col="blue")
+# abline(fitWithoutOutlier, col = "red",lwd=2)
+# legend("topleft", 
+#        legend = c("Model with Outlier", 
+#                   "Model without Outlier"),
+#        cex = 1,
+#        lty = 1,
+#        col = c("blue","red"))
+ggplot() +
+  geom_point(aes(x = X, y = Y)) +
+  geom_abline(aes(intercept = fit$coefficients[1], 
+                  slope = fit$coefficients[2], 
+                  color = "Model with Outlier")) +
+  geom_abline(aes(intercept = fitWithoutOutlier$coefficients[1], 
+                  slope = fitWithoutOutlier$coefficients[2], 
+                  color = "Model without Outlier")) +
+  scale_color_manual(name = NULL, 
+                     values = c("Model with Outlier" = "blue", 
+                                "Model without Outlier" = "red")) +
+  labs(x = "X", y = "Y") +
+  theme(legend.position = c(0, 1), legend.justification = c(0, 1))
+
+
+# 4.5 The Sampling Distribution of the OLS Estimator ---------------------------
+
+# simulate data
+N <- 100000
+X <- runif(N, min = 0, max = 20)
+u <- rnorm(N, sd = 10)
+
+# population regression
+Y <- -2 + 3.5 * X + u
+# population <- data.frame(X, Y)
+population <- tibble(X, Y)
+
+
+# set sample size
+n <- 100
+
+# compute the variance of beta_hat_0
+H_i <- 1 - mean(X) / mean(X^2) * X
+var_b0 <- var(H_i * u) / (n * mean(H_i^2)^2 )
+
+# compute the variance of hat_beta_1
+var_b1 <- var( ( X - mean(X) ) * u ) / (n * var(X)^2)
+
+
+# print variances to the console
+var_b0
+#> [1] 4.045066
+var_b1
+#> [1] 0.03018694
+
+
+# set repetitions and sample size
+n <- 100
+reps <- 10000
+
+# initialize the matrix of outcomes
+fit <- matrix(ncol = 2, nrow = reps)
+
+# loop sampling and estimation of the coefficients
+for (i in 1:reps){
+    
+    sample <- population[sample(1:N, n), ]
+    fit[i, ] <- lm(Y ~ X, data = sample)$coefficients
+    
+}
+
+# compute variance estimates using outcomes
+var(fit[, 1])
+#> [1] 4.186832
+var(fit[, 2])
+#> [1] 0.03096199
+
+
+# divide plotting area as 1-by-2 array
+# par(mfrow = c(1, 2))
+
+# plot histograms of beta_0 estimates
+# hist(fit[, 1],
+#      cex.main = 0.8,
+#      main = bquote(The ~ Distribution  ~ of ~ 10000 ~ beta[0] ~ Estimates), 
+#      xlab = bquote(hat(beta)[0]), 
+#      freq = F)
+
+# add true distribution to plot
+# curve(dnorm(x, 
+#             -2, 
+#             sqrt(var_b0)), 
+#       add = T, 
+#       col = "darkred",lwd=2)
+
+# plot histograms of beta_hat_1 
+# hist(fit[, 2],
+#      cex.main = 0.8,
+#      main = bquote(The ~ Distribution  ~ of ~ 10000 ~ beta[1] ~ Estimates), 
+#      xlab = bquote(hat(beta)[1]), 
+#      freq = F)
+
+# add true distribution to plot
+# curve(dnorm(x, 
+#             3.5, 
+#             sqrt(var_b1)), 
+#       add = T, 
+#       col = "darkred",lwd=2)
+p1 <- ggplot() +
+  geom_histogram(aes(x = fit[, 1], y = after_stat(density)), 
+                 bins = 30, fill = "steelblue", color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = -2, sd = sqrt(var_b0)), 
+                color = "darkred", linewidth = 1) +
+  labs(x = expression(hat(beta)[0]), y = "Density", 
+       title = expression(paste("The Distribution of 10000 ", beta[0], " Estimates")))
+
+p2 <- ggplot() +
+  geom_histogram(aes(x = fit[, 2], y = after_stat(density)), 
+                 bins = 30, fill = "steelblue", color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = 3.5, sd = sqrt(var_b1)), 
+                color = "darkred", linewidth = 1) +
+  labs(x = expression(hat(beta)[1]), y = "Density", 
+       title = expression(paste("The Distribution of 10000 ", beta[1], " Estimates")))
+
+p1 + p2
+
+
+# set seed for reproducibility
+set.seed(1)
+
+# set repetitions and the vector of sample sizes
+reps <- 1000
+n <- c(100, 250, 1000, 3000)
+
+# initialize the matrix of outcomes
+fit <- matrix(ncol = 2, nrow = reps)
+
+# divide the plot panel in a 2-by-2 array
+# par(mfrow = c(2, 2))
+
+# loop sampling and plotting
+
+# outer loop over n
+# for (j in 1:length(n)) {
+# 
+#     # inner loop: sampling and estimating of the coefficients
+#     for (i in 1:reps){
+# 
+#         sample <- population[sample(1:N, n[j]), ]
+#         fit[i, ] <- lm(Y ~ X, data = sample)$coefficients
+# 
+#     }
+#     print(fit)
+#     # draw density estimates
+#     plot(density(fit[ ,2]), xlim=c(2.5, 4.5),
+#          col = j,
+#          main = paste("n=", n[j]),
+#          xlab = bquote(hat(beta)[1]))
+# 
+# }
+p <- list()
+# outer loop over n
+for (j in 1:length(n)) {
+
+    # inner loop: sampling and estimating of the coefficients
+    for (i in 1:reps){
+
+        sample <- population[sample(1:N, n[j]), ]
+        fit[i, ] <- lm(Y ~ X, data = sample)$coefficients
+
+    }
+    
+    df <- tibble(fit = fit[, 2])
+    
+    # draw density estimates
+    p[[j]] <- ggplot() +
+      geom_density(aes(x = fit), data = df, color = j) +
+      labs(x = expression(hat(beta)[1]), y = "Density", 
+           title = paste("n=", n[j])) +
+      xlim(c(2.5, 4.5))
+}
+
+# p1 + p2 + p3 + p4 + plot_layout(ncol = 2, nrow = 2)
+p[[1]] + p[[2]] + p[[3]] + p[[4]] + plot_layout(ncol = 2, nrow = 2)
+
+
+# set seed for reproducibility
+set.seed(4)
+
+# simulate bivariate normal data
+bvndata <- mvrnorm(100, 
+                   mu = c(5, 5), 
+                   Sigma = cbind(c(5, 4), c(4, 5))) 
+
+# assign column names / convert to data.frame
+colnames(bvndata) <- c("X", "Y")
+# bvndata <- as.data.frame(bvndata)
+bvndata <- as_tibble(bvndata)
+
+# subset the data
+# set1 <- subset(bvndata, abs(mean(X) - X) > 1)
+# set2 <- subset(bvndata, abs(mean(X) - X) <= 1)
+set1 <- bvndata %>% 
+  filter(abs(mean(X) - X) > 1)
+set2 <- bvndata %>%
+  filter(abs(mean(X) - X) <= 1)
+
+# plot both data sets
+# plot(set1, 
+#      xlab = "X", 
+#      ylab = "Y", 
+#      pch = 19)
+# 
+# points(set2, 
+#        col = "steelblue", 
+#        pch = 19)
+# legend("topleft", 
+#        legend = c("Set1", 
+#                   "Set2"),
+#        cex = 1,
+#        pch = 19,
+#        col = c("black","steelblue"))
+ggplot() +
+  geom_point(aes(x = X, y = Y, color = "Set1"), data = set1) +
+  geom_point(aes(x = X, y = Y, color = "Set2"), data = set2) +
+  scale_color_manual(name = NULL, 
+                     values = c("Set1" = "black", 
+                                "Set2" = "steelblue")) +
+  labs(x = "X", y = "Y") +
+  theme(legend.position = c(0, 1), legend.justification = c(0, 1)) 
+
+
+# estimate both regression lines
+lm.set1 <- lm(Y ~ X, data = set1)
+lm.set2 <- lm(Y ~ X, data = set2)
+
+# plot observations
+# plot(set1, xlab = "X", ylab = "Y", pch = 19)
+# points(set2, col = "steelblue", pch = 19)
+
+# add both lines to the plot
+# abline(lm.set1, col = "black",lwd=2)
+# abline(lm.set2, col = "steelblue",lwd=2)
+# legend("bottomright", 
+#        legend = c("Set1", 
+#                   "Set2"),
+#        cex = 1,
+#        lwd=2,
+#        col = c("black","steelblue"))
+ggplot() +
+  geom_point(aes(x = X, y = Y, color = "Set1"), data = set1) +
+  geom_point(aes(x = X, y = Y, color = "Set2"), data = set2) +
+  geom_abline(aes(intercept = lm.set1$coefficients[1], 
+                  slope = lm.set1$coefficients[2], 
+                  color = "Set1")) +
+  geom_abline(aes(intercept = lm.set2$coefficients[1], 
+                  slope = lm.set2$coefficients[2], 
+                  color = "Set2")) +
+  scale_color_manual(name = NULL, 
+                     values = c("Set1" = "black", 
+                                "Set2" = "steelblue")) +
+  labs(x = "X", y = "Y") +
+  theme(legend.position = c(1, 0), legend.justification = c(1, 0))
+
+
+# 4.6 Exercises ----------------------------------------------------------------
+
+
