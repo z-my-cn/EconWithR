@@ -1,9 +1,10 @@
-
 # Econometrics with R
 
 ## Introduction
 
 This repository contains the code and data used in the book [Econometrics with R](https://www.econometrics-with-r.org/). This book is authored by Christoph Hanck, Martin Arnold, Alexander Gerber, and Martin Schmelzer.
+
+> This repository is an unofficial supplementary resource, documenting my personal journey learning Econometrics and R. It is intended solely for learning and reference purposes.
 
 ## Note
 
