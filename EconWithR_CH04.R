@@ -590,3 +590,217 @@ ggplot() +
 # 4.6 Exercises ----------------------------------------------------------------
 
 
+# 1. Class Sizes and Test Scores
+# create both vectors
+cs <- c(23, 19, 30, 22, 23, 29, 35, 36, 33, 25)
+ts <- c(430, 430, 333, 410, 390, 377, 325, 310, 328, 375)
+
+
+# draw the scatterplot
+# plot(ts ~ cs,
+#      xlab = "Class Size",
+#      ylab = "Test Score",
+#      main = "Scatterplot of Test Score and Class Size",
+#      pch = 20)
+ggplot() +
+  geom_point(aes(x = cs, y = ts)) +
+  labs(x = "Class Size", y = "Test Score", 
+       title = "Scatterplot of Test Score and Class Size")
+
+
+# 2. Mean, Variance, Covariance and Correlation
+# compute mean, variance and standard deviation of test scores
+mean(ts)
+#> [1] 370.8
+sd(ts)
+#> [1] 44.75315
+var(ts)
+#> [1] 2002.844
+
+# compute the covariance and the correlation coefficient
+cov(cs, ts)
+#> [1] -251.4444
+cor(cs, ts)
+#> [1] -0.9474424
+
+
+# 3. Simple Linear Regression
+# attach the package AER
+# library(AER)
+
+# estimate the model
+mod <- lm(ts ~ cs)
+mod
+# Call:
+# lm(formula = ts ~ cs)
+# 
+# Coefficients:
+# (Intercept)           cs  
+#      567.43        -7.15 
+
+# obtain a model summary
+summary(mod)
+# Call:
+# lm(formula = ts ~ cs)
+# 
+# Residuals:
+#      Min       1Q   Median       3Q      Max 
+# -19.9248 -10.6002  -0.8506   5.8631  27.0246 
+# 
+# Coefficients:
+#             Estimate Std. Error t value Pr(>|t|)    
+# (Intercept) 567.4272    23.9606  23.682 1.08e-08 ***
+# cs           -7.1501     0.8536  -8.376 3.13e-05 ***
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Residual standard error: 15.19 on 8 degrees of freedom
+# Multiple R-squared:  0.8976,	Adjusted R-squared:  0.8849 
+# F-statistic: 70.16 on 1 and 8 DF,  p-value: 3.132e-05
+
+
+# 4. The Model Object
+# check the class of `mod`
+class(mod)
+#> [1] "lm"
+
+# use `is.list()` on `mod`
+is.list(mod)
+#> [1] TRUE
+
+# check the entries of `mod` using `names()`
+names(mod)
+#>  [1] "coefficients"  "residuals"     "effects"       "rank"
+#>  [5] "fitted.values" "assign"        "qr"            "df.residual"
+#>  [9] "xlevels"       "call"          "terms"         "model"
+
+# use the operator `$` on `mod`
+mod$coefficients
+#> (Intercept)          cs
+#>    567.4272     -7.1501
+
+
+# 5. Plotting the Regression Line
+# add the regression line to the scatterplot
+# plot(cs, ts)
+# abline(mod)
+ggplot() +
+  geom_point(aes(x = cs, y = ts)) +
+  geom_abline(aes(intercept = mod$coefficients[1], 
+                  slope = mod$coefficients[2])) +
+  labs(x = "Class Size", y = "Test Score", 
+       title = "Scatterplot of Test Score and Class Size")
+
+
+# 6. Summary of a Model Object
+# assign the model summary to the variable `s`
+s <- summary(mod)
+
+# check names of entries in `s`
+names(s)
+#>  [1] "call"          "terms"         "residuals"     "coefficients"
+#>  [5] "aliased"       "sigma"         "df"            "r.squared"
+#>  [9] "adj.r.squared" "fstatistic"    "cov.unscaled"
+
+# save the R^2 of the regression to the variable `R2`
+R2 <- s$r.squared
+R2
+#> [1] 0.8976472
+
+
+# 7. Estimated Coefficients
+# save the coefficient matrix to `coefs`
+coefs <- s$coefficients
+coefs
+#>               Estimate Std. Error   t value     Pr(>|t|)
+#> (Intercept) 567.427172 23.9606448 23.681632 1.075914e-08
+#> cs           -7.150079  0.8536168 -8.376216 3.132287e-05
+
+
+# 8. Dropping the Intercept
+# regress `ts` solely on `cs`. Store the result in `mod_ni`.
+mod_ni <- lm(ts ~ cs - 1)
+mod_ni
+# Call:
+# lm(formula = ts ~ cs - 1)
+# 
+# Coefficients:
+#    cs  
+# 12.65 
+
+
+# 9. Regression Output: No Constant Case
+# extract the coefficient matrix from the model summary and save it to `coef`
+coef <- summary(mod_ni)$coefficients
+
+
+
+# 10. Regression Output: No Constant Case - Ctd.
+# print the contents of `coef` to the console
+coef
+#>    Estimate Std. Error  t value    Pr(>|t|)
+#> cs 12.65478    1.36013 9.304097 6.50056e-06
+
+# compute the t-statistic manually and assign it to `t_stat`
+t_stat <- coef[1, 1] / coef[1, 2]
+t_stat
+#> [1] 9.304097
+
+
+# 11. Two Regressions, One Plot
+# plot the regression lines of both models
+# plot(cs, ts)
+# abline(mod, col = "blue")
+# abline(mod_ni, col = "red")
+ggplot() +
+  geom_point(aes(x = cs, y = ts)) +
+  geom_abline(aes(intercept = mod$coefficients[1], 
+                  slope = mod$coefficients[2],
+                  color = "Intercept")) +
+  geom_abline(aes(intercept = 0, 
+                  slope = mod_ni$coefficients[1], 
+                  color = "No Intercept")) + 
+  scale_color_manual(name = NULL, 
+                     values = c("Intercept" = "blue", 
+                                "No Intercept" = "red")) +
+  labs(x = "Class Size", y = "Test Score", 
+       title = "Scatterplot of Test Score and Class Size")
+
+
+# 12. TSS and SSR
+# compute the SSR and save it to `ssr`
+ssr <- sum(mod$residuals^2)
+ssr
+#> [1] 1844.971
+
+# compute the TSS and save it to `tss`
+tss <- var(ts) * (length(ts) - 1)
+tss
+#> [1] 18025.6
+
+
+# 13. The R^2 of a Regression Model
+# compute R^2, round to four decimal places and save the result to `R2`
+R2 <- round(1 - ssr / tss, 4)
+R2
+#> [1] 0.8976
+
+# check whether your result is correct using the "==" operator
+R2 == round(summary(mod)$r.squared, 4)
+#> [1] TRUE
+
+
+# 14. The Standard Error of The Regression
+# obtain the SER using `summary()` and save the value to `SER`
+SER <- summary(mod)$sigma
+SER
+#> [1] 15.18622
+
+# compute the SSR and save it to `SSR`
+SSR <- SER^2 * (length(ts) - 2)
+SSR
+#> [1] 1844.971
+
+# do the comparison
+SER == sqrt(SSR / (length(ts) - 2))
+#> [1] TRUE
