@@ -6,6 +6,7 @@ library(ggplot2)
 library(patchwork)
 library(latex2exp)
 
+
 # 5.1 Testing Two-Sided Hypotheses Concerning the Slope Coefficient ------------
 
 # load the `CASchools` dataset
